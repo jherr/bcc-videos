@@ -97,7 +97,7 @@ export function createVideos(): {
 } {
   const [videos] = createResource<Video[]>(
     () =>
-      fetch("/videos.json")
+      fetch("/bcc-videos/videos.json")
         .then((resp) => resp.json())
         .then((videos: Video[]) =>
           videos.map((video) => ({

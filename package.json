@@ -6,7 +6,7 @@
     "start": "vite",
     "dev": "vite",
     "build": "vite build",
-    "deploy": "gh-pages -d dist"
+    "deploy": "yarn build && gh-pages -d dist"
   },
   "license": "MIT",
   "devDependencies": {
