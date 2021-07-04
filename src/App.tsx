@@ -1,70 +1,80 @@
-import { For } from "solid-js";
+import { For, createMemo } from "solid-js";
 import type { Component } from "solid-js";
 
-import { createVideos } from "./createVideos";
+import {
+  videos,
+  search,
+  setSearch,
+  filterVideos,
+  createFieldToggles,
+} from "./createVideos";
 
 import "./index.css";
 
 const Filters: Component<{
-  title: string;
-  keys: () => Record<string, boolean>;
+  field: string;
+  selected: () => Record<string, boolean>;
   toggle: (key: string) => void;
   clearAll: () => void;
-}> = ({ title, keys, toggle, clearAll }) => (
-  <>
-    <div class="mui--divider-bottom" style={{ "margin-top": "1rem" }}></div>
-    <div class="mui--text-subhead">
-      {title}
-      <button
-        onclick={clearAll}
-        class="mui-btn mui-btn--small mui-btn--primary mui-btn--flat"
+}> = ({ field, toggle, clearAll, selected }) => {
+  const keys = createMemo(() => {
+    const series: Record<string, boolean> = {};
+    videos().forEach((video) =>
+      video[field].forEach((v) => (series[v] = false))
+    );
+    return Object.keys(series).sort();
+  });
+
+  return (
+    <>
+      <div class="mui--divider-bottom" style={{ "margin-top": "1rem" }}></div>
+      <div class="mui--text-subhead">
+        {`${field.charAt(0).toUpperCase()}${field.slice(1)}`}
+        <button
+          onclick={clearAll}
+          class="mui-btn mui-btn--small mui-btn--primary mui-btn--flat"
+        >
+          Clear All
+        </button>
+      </div>
+      <div
+        style={{
+          "max-height": "300px",
+          "overflow-y": "scroll",
+        }}
       >
-        Clear All
-      </button>
-    </div>
-    <div
-      style={{
-        "max-height": "300px",
-        "overflow-y": "scroll",
-      }}
-    >
-      <For each={Object.keys(keys()).sort()}>
-        {(k: string) => (
-          <div class="mui-checkbox">
-            <label>
-              <input
-                type="checkbox"
-                value=""
-                checked={keys()[k]}
-                onclick={() => toggle(k)}
-              />
-              {k}
-            </label>
-          </div>
-        )}
-      </For>
-    </div>
-  </>
-);
+        <For each={keys()}>
+          {(k: string) => (
+            <div class="mui-checkbox">
+              <label>
+                <input
+                  type="checkbox"
+                  value=""
+                  checked={selected()[k]}
+                  onclick={() => toggle(k)}
+                />
+                {k}
+              </label>
+            </div>
+          )}
+        </For>
+      </div>
+    </>
+  );
+};
 
 const App: Component = () => {
-  const {
-    videos,
-    search,
-    setSearch,
+  const filters = {
+    series: createFieldToggles(),
+    languages: createFieldToggles(),
+    technologies: createFieldToggles(),
+  };
 
-    languages,
-    toggleLanguage,
-    clearAllLanguages,
-
-    technologies,
-    toggleTechnology,
-    clearAllTechnologies,
-
-    series,
-    toggleSeries,
-    clearAllSeries,
-  } = createVideos();
+  const filteredVideos = filterVideos({
+    languages: filters.languages.selected,
+    technologies: filters.technologies.selected,
+    series: filters.series.selected,
+  });
 
   return (
     <div class="container">
@@ -78,31 +88,19 @@ const App: Component = () => {
             />
             <label>Search</label>
           </div>
-
-          <Filters
-            title="Series"
-            keys={series}
-            toggle={toggleSeries}
-            clearAll={clearAllSeries}
-          />
-
-          <Filters
-            title="Technologies"
-            keys={technologies}
-            toggle={toggleTechnology}
-            clearAll={clearAllTechnologies}
-          />
-
-          <Filters
-            title="Languages"
-            keys={languages}
-            toggle={toggleLanguage}
-            clearAll={clearAllLanguages}
-          />
+          <For each={Object.keys(filters)}>
+            {(k) => (
+              <Filters
+                field={k}
+                selected={filters[k].selected}
+                toggle={filters[k].toggle}
+                clearAll={filters[k].clearAll}
+              />
+            )}
+          </For>
         </div>
-
         <div class="videos-layout">
-          <For each={videos()}>
+          <For each={filteredVideos()}>
             {(video) => (
               <>
                 <div style={{ "margin-top": "1rem" }}>
